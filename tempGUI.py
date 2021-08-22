@@ -35,7 +35,9 @@ kenneth = Member('Kenneth', 0)
 roger = Member('Roger', 0)
 
 all_members = [aksel, kenneth, roger]
-#scoreboard = QLabel("Init")
+print(all_members[0].points)
+global_scoreboard = []
+global_leader = ""
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Create pop up windows =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 class AddMemberWindow(QWidget):
     """
@@ -148,7 +150,7 @@ class GrantPointsWindow(QWidget):
         self.setLayout(layout)
 
     def grant_points(self):
-        global all_members
+        global all_members, global_scoreboard, global_leader
         i = 1
         for member in all_members:
             if member.name != self.pointmember.text():
@@ -158,12 +160,19 @@ class GrantPointsWindow(QWidget):
                 i += 1
 
             elif member.name == self.pointmember.text():
-                all_members.remove(member)
-                member.points += int(self.points.text())
-                all_members.append(member)
+                all_members[i - 1].points += int(self.points.text())
+                highest_point = 0
+                leading_member = ""
+                new_scores = []
+                for updated_member in all_members:
+                    new_scores.append(updated_member.name)
+                    new_scores.append(updated_member.points)
+                    if updated_member.points > highest_point:
+                        leading_member = updated_member.name
+                        highest_point = updated_member.points
+                global_leader.setText("Current leader: " + leading_member)
+                global_scoreboard.setText(str(new_scores))  # Updates the new score to the global score variable
 
-                # Update scoreboard
-                update_scoreboard(self)
 
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Information)
@@ -212,11 +221,18 @@ class RemovePointsWindow(QWidget):
                 i += 1
 
             elif member.name == self.pointmember.text():
-                all_members.remove(member)
-                member.points -= int(self.points.text())
-                all_members.append(member)
-
-                update_scoreboard(self)
+                all_members[i - 1].points -= int(self.points.text())
+                highest_point = 0
+                leading_member = ""
+                new_scores = []
+                for updated_member in all_members:
+                    new_scores.append(updated_member.name)
+                    new_scores.append(updated_member.points)
+                    if updated_member.points > highest_point:
+                        leading_member = updated_member.name
+                        highest_point = updated_member.points
+                global_leader.setText("Current leader: " + leading_member)
+                global_scoreboard.setText(str(new_scores))
 
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Information)
@@ -277,6 +293,40 @@ class MainWindow(QDialog):
 
         else:
             window.show()
+
+    def update_scoreboard(self):
+        global all_members, global_scoreboard, global_leader
+        new_scores = []
+        highest_point = 0
+        leading_member = ""
+        if global_scoreboard is []:
+            for updated_member in all_members:
+                new_scores.append(updated_member.name)
+                new_scores.append(updated_member.points)
+
+            self.scoreboard.setText(str(new_scores))
+            self.scoreboard.update()
+            global_scoreboard = self.scoreboard
+        else:
+            self.scoreboard = global_scoreboard
+
+        if global_leader is "":
+            for updated_member in all_members:
+                new_scores.append(updated_member.name)
+                new_scores.append(updated_member.points)
+                if updated_member.points > highest_point:
+                    leading_member = updated_member.name
+                    highest_point = updated_member.points
+            self.leader.setText(leading_member)
+            self.leader.update()
+            global_leader = self.leader
+        else:
+            self.leader = global_leader
+
+
+
+
+
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Create group boxes =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     def createTopLeftGroupBox(self):
@@ -359,18 +409,27 @@ class MainWindow(QDialog):
         self.topRightGroupBox.setLayout(layout)
 
     def createBottomMiddleGroupBox(self):
-        global all_members, scoreboard
+        global all_members, global_scoreboard, global_leader
+        highest_point = 0
+        leading_member = ""
+        scores = []
+        for member in all_members:
+            scores.append(member.name)
+            scores.append(member.points)
+            if member.points > highest_point:
+                leading_member = member.name
+                highest_point = member.points
 
-        scores = update_scoreboard(self)
         self.bottomMiddleGroupBox = QGroupBox("Scoreboard")
-
-
-        leader = QLabel("Current leader: Aksel")
-
+        self.leader = QLabel("Current leader: " + leading_member)
+        self.scoreboard = QLabel(str(scores))
+        self.scoreboard.update()
         layout = QVBoxLayout()
-        layout.addWidget(scores)
-        layout.addWidget(leader)
+        layout.addWidget(self.leader)
+        layout.addWidget(self.scoreboard)
         self.bottomMiddleGroupBox.setLayout(layout)
+        global_scoreboard = self.scoreboard
+        global_leader = self.leader
 
     def createBottomLeftTabWidget(self):
         self.bottomLeftTabWidget = QTabWidget()
@@ -411,16 +470,7 @@ class MainWindow(QDialog):
         self.bottomRightGroupBox.setLayout(layout)
 
 
-def update_scoreboard(self):
-    global all_members
-    scoreboard = QLabel("Init")
-    new_scores = []
-    # Update scoreboard
-    for updated_member in all_members:
-        new_scores.append(updated_member.name)
-        new_scores.append(updated_member.points)
-    scoreboard.setText(str(new_scores))
-    return scoreboard
+
 
 
 app = QApplication(sys.argv)
